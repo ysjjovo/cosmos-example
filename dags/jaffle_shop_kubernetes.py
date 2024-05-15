@@ -27,7 +27,7 @@ from cosmos.profiles import PostgresUserPasswordProfileMapping
 
 
 PROJECT_DIR = Path("dags/dbt/jaffle_shop/")
-DBT_IMAGE = "dbt-jaffle-shop:1.0.0"
+DBT_IMAGE = "139260835254.dkr.ecr.us-east-2.amazonaws.com/dbt-jaffle-shop:1.1"
 
 project_seeds = [
     {"project": "jaffle_shop", "seeds": ["raw_customers", "raw_payments", "raw_orders"]}
@@ -38,6 +38,7 @@ postgres_password_secret = Secret(
     deploy_target="POSTGRES_PASSWORD",
     secret="postgres-secrets",
     key="password",
+    namespace="mwaa",
 )
 
 postgres_host_secret = Secret(
@@ -45,6 +46,7 @@ postgres_host_secret = Secret(
     deploy_target="POSTGRES_HOST",
     secret="postgres-secrets",
     key="host",
+    namespace="mwaa",
 )
 
 with DAG(
@@ -62,6 +64,8 @@ with DAG(
         image=DBT_IMAGE,
         is_delete_operator_pod=False,
         secrets=[postgres_password_secret, postgres_host_secret],
+        config_file="/usr/local/airflow/dags/kubeconfig",
+        namespace="mwaa",
     )
 
     run_models = DbtTaskGroup(
@@ -84,6 +88,8 @@ with DAG(
             "get_logs": True,
             "is_delete_operator_pod": False,
             "secrets": [postgres_password_secret, postgres_host_secret],
+            "config_file": "/usr/local/airflow/dags/kubeconfig",
+            "namespace": "mwaa",
         },
     )
 
